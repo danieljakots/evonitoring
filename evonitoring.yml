@@ -1,0 +1,35 @@
+FR-Astreinte-send: "smsmode"
+#FR-Astreinte-send: "mobyt"
+#FR-Astreinte-send: "twilio"
+Astreinte:
+  - "Alice"
+
+Annuaire:
+  Alice: "33612345678"
+  Bob: "14381234567"
+  Canard: "15140987654"
+
+# Parametres fournisseurs
+Mobyt:
+  ip: "192.0.2.1"
+  port: "80"
+  host: "mobyt.example.com"
+  user: "U53R"
+  pass: "P455w0rD"
+  sender: "33609876543"
+
+Smsmode:
+  ip: "192.0.2.2"
+  port: "80"
+  host: "smsmode.example.com"
+  user: "passowrdy"
+  pass: "mcpasswordface"
+
+Twilio:
+  account_sid: "11235811"
+  auth_token: "3141592654"
+  sender: "+14385556677"
+
+Pushover:
+  token: "T0k3n"
+  user: "johndoe"

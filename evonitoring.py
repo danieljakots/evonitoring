@@ -2,7 +2,6 @@
 
 from __future__ import print_function
 import httplib
-import os.path
 import sys
 import urllib
 import syslog
@@ -12,7 +11,6 @@ import syslog
 import requests
 import yaml
 
-PUSHOVER_ACTIVE = "/tmp/.djakots/.pushover"
 CONFIG = "/etc/evonitoring.yml"
 
 
@@ -71,7 +69,7 @@ def mobyt(oncallnumber, alert):
 
 # which alerting system should we use: mobyt, twilio
 def decide_alerting(oncallnumber, alert):
-    if os.path.isfile(PUSHOVER_ACTIVE):
+    if pushover_active == "True":
         # it must not block nor kill the script
         try:
             pushover(alert)
@@ -106,8 +104,13 @@ def readconf():
     # pushover
     global pushover_token
     global pushover_user
-    pushover_token = cfg["Pushover"]["token"]
-    pushover_user = cfg["Pushover"]["user"]
+    global pushover_active
+    try:
+        pushover_token = cfg["Pushover"]["token"]
+        pushover_user = cfg["Pushover"]["user"]
+        pushover_active = cfg["Pushover"]["active"]
+    except KeyError:
+        syslog.syslog(syslog.LOG_ERR, "Pushover config couldn't be parsed")
 
     # sender system
     global MOBYT_BIN

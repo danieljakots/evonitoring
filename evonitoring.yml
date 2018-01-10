@@ -33,3 +33,4 @@ Twilio:
 Pushover:
   token: "T0k3n"
   user: "johndoe"
+  active: "True"

@@ -9,6 +9,10 @@ Annuaire:
   Bob: "14381234567"
   Canard: "15140987654"
 
+IRC:
+  active: "True"
+  fifo: "test"
+
 # Parametres fournisseurs
 Mobyt:
   ip: "192.0.2.1"

@@ -67,6 +67,18 @@ def mobyt(oncallnumber, alert):
     syslog.syslog('SMS sent with mobyt to ' + oncallnumber)
 
 
+def irc(alert):
+    # concat the multiple lines on a single line
+    uniline = []
+    for l in alert:
+        if l == '\n':
+            l = ' '
+        uniline.append(l)
+    uniline.append('\n')
+    with open(irc_fifo, "a") as f:
+        f.write(''.join(uniline))
+
+
 # which alerting system should we use: mobyt, twilio
 def decide_alerting(oncallnumber, alert):
     if pushover_active == "True":
@@ -85,6 +97,13 @@ def decide_alerting(oncallnumber, alert):
             twilio(oncallnumber, alert)
     else:
         twilio(oncallnumber, alert)
+
+    if irc_active:
+        # it must not block nor kill the script
+        try:
+            irc(alert)
+        except:
+            pass
 
 
 def readconf():
@@ -156,6 +175,15 @@ def readconf():
         smsmode_pass = cfg["Smsmode"]["pass"]
     except KeyError:
         syslog.syslog(syslog.LOG_ERR, "Smsmode config couldn't be parsed")
+
+    # IRC
+    global irc_active
+    global irc_fifo
+    try:
+        irc_active = cfg["IRC"]["active"]
+        irc_fifo = cfg["IRC"]["fifo"]
+    except KeyError:
+        syslog.syslog(syslog.LOG_ERR, "irc config couldn't be parsed")
 
     # oncall phone(s) number(s)
     oncallnumbers = []

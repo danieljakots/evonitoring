@@ -77,7 +77,7 @@ def irc(alert):
     uniline.append('\n')
     with open(irc_fifo, "a") as f:
         f.write(''.join(uniline))
-
+    syslog.syslog('Alert sent to irc as well')
 
 # which alerting system should we use: mobyt, twilio
 def decide_alerting(oncallnumber, alert):

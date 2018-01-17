@@ -98,7 +98,7 @@ def decide_alerting(oncallnumber, alert):
     else:
         twilio(oncallnumber, alert)
 
-    if irc_active:
+    if irc_active == "True":
         # it must not block nor kill the script
         try:
             irc(alert)

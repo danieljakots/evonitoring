@@ -1,6 +1,7 @@
 import unittest
 import evonitoring
 
+
 class TestEvonitoring(unittest.TestCase):
 
     def test_readconf(self):
@@ -20,7 +21,6 @@ class TestEvonitoring(unittest.TestCase):
         # oncallnumbers
         self.assertIsInstance(oncallnumbers, list)
         self.assertEqual(''.join(oncallnumbers[0]), "33612345678")
-
 
     def test_decide_alerting(self):
         oncallnumbers, cfg = evonitoring.readconf()

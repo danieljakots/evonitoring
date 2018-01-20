@@ -26,11 +26,9 @@ def pushover(alert):
 
 
 def twilio(oncallnumber, alert):
-    payload = {
-        'From': cfg["twilio_available_number"],
-        'To': "+" + oncallnumber,
-        'Body': alert
-    }
+    payload = {'From': cfg["twilio_available_number"],
+               'To': "+" + oncallnumber,
+               'Body': alert}
     # send the text with twilio's api
     p = requests.post("https://api.twilio.com/2010-04-01/Accounts/" +
                       cfg["twilio_account_sid"] + "/Messages",
@@ -79,6 +77,7 @@ def irc(alert):
     with open(cfg["irc_fifo"], "a") as f:
         f.write(''.join(uniline))
     syslog.syslog('Alert sent to irc as well')
+
 
 # which alerting system should we use: mobyt, twilio
 def decide_alerting(oncallnumber, alert):

@@ -18,23 +18,23 @@ def pushover(alert):
     conn = httplib.HTTPSConnection("api.pushover.net:443")
     conn.request("POST", "/1/messages.json",
                  urllib.urlencode({
-                     "token": cfg["pushover_token"],
-                     "user": cfg["pushover_user"],
+                     "token": api_cfg["pushover_token"],
+                     "user": api_cfg["pushover_user"],
                      "message": alert}),
                  {"Content-type": "application/x-www-form-urlencoded"})
     conn.getresponse()
 
 
 def twilio(oncallnumber, alert):
-    payload = {'From': cfg["twilio_available_number"],
+    payload = {'From': api_cfg["twilio_available_number"],
                'To': "+" + oncallnumber,
                'Body': alert}
     # send the text with twilio's api
     p = requests.post("https://api.twilio.com/2010-04-01/Accounts/" +
-                      cfg["twilio_account_sid"] + "/Messages",
+                      api_cfg["twilio_account_sid"] + "/Messages",
                       data=payload,
-                      auth=(cfg["twilio_account_sid"],
-                            cfg["twilio_auth_token"]))
+                      auth=(api_cfg["twilio_account_sid"],
+                            api_cfg["twilio_auth_token"]))
     if p.status_code != 201:
         syslog.syslog(syslog.LOG_ERR, 'Problem while sending twilio')
     syslog.syslog('SMS sent with twilio to ' + oncallnumber)
@@ -43,10 +43,10 @@ def twilio(oncallnumber, alert):
 def smsmode(oncallnumber, alert):
     payload = {"numero": oncallnumber,
                "message": alert,
-               "pseudo": cfg["smsmode_user"],
-               "pass": cfg["smsmode_pass"]}
-    g = requests.get("http://" + cfg["smsmode_host"] + "/http/1.6/sendSMS.do",
-                     params=payload)
+               "pseudo": api_cfg["smsmode_user"],
+               "pass": api_cfg["smsmode_pass"]}
+    g = requests.get("http://" + api_cfg["smsmode_host"] +
+                     "/http/1.6/sendSMS.do", params=payload)
     if g.status_code != 200:
         syslog.syslog(syslog.LOG_ERR, 'Problem while sending smsmode')
     syslog.syslog('SMS sent with smsmode to ' + oncallnumber)
@@ -55,11 +55,11 @@ def smsmode(oncallnumber, alert):
 def mobyt(oncallnumber, alert):
     payload = {"rcpt": "+" + oncallnumber,
                "data": alert,
-               "user": cfg["mobyt_user"],
-               "pass": cfg["mobyt_pass"],
-               "sender": cfg["mobyt_sender"],
+               "user": api_cfg["mobyt_user"],
+               "pass": api_cfg["mobyt_pass"],
+               "sender": api_cfg["mobyt_sender"],
                "qty": "n"}
-    g = requests.get("http://" + cfg["mobyt_host"] + "/sms/send.php",
+    g = requests.get("http://" + api_cfg["mobyt_host"] + "/sms/send.php",
                      params=payload)
     if g.status_code != 200:
         syslog.syslog(syslog.LOG_ERR, 'Problem while sending mobyt')
@@ -74,7 +74,7 @@ def irc(alert):
             l = ' '
         uniline.append(l)
     uniline.append('\n')
-    with open(cfg["irc_fifo"], "a") as f:
+    with open(api_cfg["irc_fifo"], "a") as f:
         f.write(''.join(uniline))
     syslog.syslog('Alert sent to irc as well')
 
@@ -116,21 +116,22 @@ def readconf():
     with open(CONFIG, 'r') as ymlfile:
         yaml_cfg = yaml.load(ymlfile)
 
-    global cfg
+    global api_cfg
+    api_cfg = {}
     cfg = {}
 
     # twilio api key
     try:
-        cfg["twilio_account_sid"] = yaml_cfg["Twilio"]["account_sid"]
-        cfg["twilio_auth_token"] = yaml_cfg["Twilio"]["auth_token"]
-        cfg["twilio_available_number"] = yaml_cfg["Twilio"]["sender"]
+        api_cfg["twilio_account_sid"] = yaml_cfg["Twilio"]["account_sid"]
+        api_cfg["twilio_auth_token"] = yaml_cfg["Twilio"]["auth_token"]
+        api_cfg["twilio_available_number"] = yaml_cfg["Twilio"]["sender"]
     except KeyError:
         syslog.syslog(syslog.LOG_ERR, "Twilio config couldn't be parsed")
 
     # pushover
     try:
-        cfg["pushover_token"] = yaml_cfg["Pushover"]["token"]
-        cfg["pushover_user"] = yaml_cfg["Pushover"]["user"]
+        api_cfg["pushover_token"] = yaml_cfg["Pushover"]["token"]
+        api_cfg["pushover_user"] = yaml_cfg["Pushover"]["user"]
         cfg["pushover_active"] = yaml_cfg["Pushover"]["active"]
     except KeyError:
         syslog.syslog(syslog.LOG_ERR, "Pushover config couldn't be parsed")
@@ -148,29 +149,29 @@ def readconf():
 
     # mobyt
     try:
-        cfg["mobyt_ip"] = yaml_cfg["Mobyt"]["ip"]
-        cfg["mobyt_port"] = yaml_cfg["Mobyt"]["port"]
-        cfg["mobyt_host"] = yaml_cfg["Mobyt"]["host"]
-        cfg["mobyt_user"] = yaml_cfg["Mobyt"]["user"]
-        cfg["mobyt_pass"] = yaml_cfg["Mobyt"]["pass"]
-        cfg["mobyt_sender"] = yaml_cfg["Mobyt"]["sender"]
+        api_cfg["mobyt_ip"] = yaml_cfg["Mobyt"]["ip"]
+        api_cfg["mobyt_port"] = yaml_cfg["Mobyt"]["port"]
+        api_cfg["mobyt_host"] = yaml_cfg["Mobyt"]["host"]
+        api_cfg["mobyt_user"] = yaml_cfg["Mobyt"]["user"]
+        api_cfg["mobyt_pass"] = yaml_cfg["Mobyt"]["pass"]
+        api_cfg["mobyt_sender"] = yaml_cfg["Mobyt"]["sender"]
     except KeyError:
         syslog.syslog(syslog.LOG_ERR, "Mobyt config couldn't be parsed")
 
     # smsmode
     try:
-        cfg["smsmode_ip"] = yaml_cfg["Smsmode"]["ip"]
-        cfg["smsmode_port"] = yaml_cfg["Smsmode"]["port"]
-        cfg["smsmode_host"] = yaml_cfg["Smsmode"]["host"]
-        cfg["smsmode_user"] = yaml_cfg["Smsmode"]["user"]
-        cfg["smsmode_pass"] = yaml_cfg["Smsmode"]["pass"]
+        api_cfg["smsmode_ip"] = yaml_cfg["Smsmode"]["ip"]
+        api_cfg["smsmode_port"] = yaml_cfg["Smsmode"]["port"]
+        api_cfg["smsmode_host"] = yaml_cfg["Smsmode"]["host"]
+        api_cfg["smsmode_user"] = yaml_cfg["Smsmode"]["user"]
+        api_cfg["smsmode_pass"] = yaml_cfg["Smsmode"]["pass"]
     except KeyError:
         syslog.syslog(syslog.LOG_ERR, "Smsmode config couldn't be parsed")
 
     # IRC
     try:
         cfg["irc_active"] = yaml_cfg["IRC"]["active"]
-        cfg["irc_fifo"] = yaml_cfg["IRC"]["fifo"]
+        api_cfg["irc_fifo"] = yaml_cfg["IRC"]["fifo"]
     except KeyError:
         syslog.syslog(syslog.LOG_ERR, "irc config couldn't be parsed")
 

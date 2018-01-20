@@ -80,7 +80,16 @@ def irc(alert):
 
 
 # which alerting system should we use: mobyt, twilio
-def decide_alerting(oncallnumber, alert):
+def decide_alerting(oncallnumber):
+    # select the right sender depend of the number
+    if oncallnumber[0:2] == "33":
+        system = cfg["FR_sender"]
+    else:
+        system = "twilio"
+    return system
+
+
+def alert(oncallnumber, alert, system):
     if cfg["pushover_active"] == "True":
         # it must not block nor kill the script
         try:
@@ -88,15 +97,12 @@ def decide_alerting(oncallnumber, alert):
         except:
             pass
     # select the right sender depend of the number
-    if oncallnumber[0:2] == "33":
-        if cfg["FR_sender"] == "mobyt":
-            mobyt(oncallnumber, alert)
-        elif cfg["FR_sender"] == "smsmode":
-            smsmode(oncallnumber, alert)
-        elif cfg["FR_sender"] == "twilio":
+    if system == "mobyt":
+        mobyt(oncallnumber, alert)
+    elif system == "smsmode":
+        smsmode(oncallnumber, alert)
+    elif system == "twilio":
             twilio(oncallnumber, alert)
-    else:
-        twilio(oncallnumber, alert)
 
     if cfg["irc_active"] == "True":
         # it must not block nor kill the script
@@ -194,7 +200,8 @@ if __name__ == "__main__":
         alerttosend = ''.join(alertlines)
         # now we have everything so process the alert
         for oncallnumber in oncallnumbers:
-            decide_alerting(oncallnumber, alerttosend[0:156])
+            system = decide_alerting(oncallnumber)
+            alert(oncallnumber, alerttosend[0:156], system)
     # if we can't read the phone number file, alerts must have been disabled
     except IOError:
         syslog.syslog(syslog.LOG_ERR, "Config file couldn't be opened")

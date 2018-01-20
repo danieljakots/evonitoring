@@ -79,9 +79,8 @@ def irc(alert):
     syslog.syslog('Alert sent to irc as well')
 
 
-# which alerting system should we use: mobyt, twilio or smsmode
 def decide_alerting(oncallnumber, cfg):
-    # select the right sender depend of the number
+    # select the right sender depending of the number
     if oncallnumber[0:2] == "33":
         system = cfg["FR_sender"]
     else:

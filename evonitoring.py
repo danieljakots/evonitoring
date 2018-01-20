@@ -3,8 +3,8 @@
 from __future__ import print_function
 import httplib
 import sys
-import urllib
 import syslog
+import urllib
 
 # you need to install py-requests (OpenBSD) or python-requests (Debian)
 # you need to install py-yaml     (OpenBSD) or python-yaml     (Debian)

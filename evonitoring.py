@@ -108,15 +108,16 @@ def decide_alerting(oncallnumber, alert):
 
 def readconf():
     with open(CONFIG, 'r') as ymlfile:
-        cfg = yaml.load(ymlfile)
+        yaml_cfg = yaml.load(ymlfile)
+
     # twilio api key
     global twilio_account_sid
     global twilio_auth_token
     global twilio_available_number
     try:
-        twilio_account_sid = cfg["Twilio"]["account_sid"]
-        twilio_auth_token = cfg["Twilio"]["auth_token"]
-        twilio_available_number = cfg["Twilio"]["sender"]
+        twilio_account_sid = yaml_cfg["Twilio"]["account_sid"]
+        twilio_auth_token = yaml_cfg["Twilio"]["auth_token"]
+        twilio_available_number = yaml_cfg["Twilio"]["sender"]
     except KeyError:
         syslog.syslog(syslog.LOG_ERR, "Twilio config couldn't be parsed")
 
@@ -125,20 +126,20 @@ def readconf():
     global pushover_user
     global pushover_active
     try:
-        pushover_token = cfg["Pushover"]["token"]
-        pushover_user = cfg["Pushover"]["user"]
-        pushover_active = cfg["Pushover"]["active"]
+        pushover_token = yaml_cfg["Pushover"]["token"]
+        pushover_user = yaml_cfg["Pushover"]["user"]
+        pushover_active = yaml_cfg["Pushover"]["active"]
     except KeyError:
         syslog.syslog(syslog.LOG_ERR, "Pushover config couldn't be parsed")
 
     # sender system
     global MOBYT_BIN
     global FR_sender
-    if cfg["FR-Astreinte-send"] == "mobyt":
+    if yaml_cfg["FR-Astreinte-send"] == "mobyt":
         FR_sender = "mobyt"
-    elif cfg["FR-Astreinte-send"] == "smsmode":
+    elif yaml_cfg["FR-Astreinte-send"] == "smsmode":
         FR_sender = "smsmode"
-    elif cfg["FR-Astreinte-send"] == "twilio":
+    elif yaml_cfg["FR-Astreinte-send"] == "twilio":
         FR_sender = "twilio"
     else:
         syslog.syslog(syslog.LOG_ERR,
@@ -152,12 +153,12 @@ def readconf():
     global mobyt_pass
     global mobyt_sender
     try:
-        mobyt_ip = cfg["Mobyt"]["ip"]
-        mobyt_port = cfg["Mobyt"]["port"]
-        mobyt_host = cfg["Mobyt"]["host"]
-        mobyt_user = cfg["Mobyt"]["user"]
-        mobyt_pass = cfg["Mobyt"]["pass"]
-        mobyt_sender = cfg["Mobyt"]["sender"]
+        mobyt_ip = yaml_cfg["Mobyt"]["ip"]
+        mobyt_port = yaml_cfg["Mobyt"]["port"]
+        mobyt_host = yaml_cfg["Mobyt"]["host"]
+        mobyt_user = yaml_cfg["Mobyt"]["user"]
+        mobyt_pass = yaml_cfg["Mobyt"]["pass"]
+        mobyt_sender = yaml_cfg["Mobyt"]["sender"]
     except KeyError:
         syslog.syslog(syslog.LOG_ERR, "Mobyt config couldn't be parsed")
 
@@ -168,11 +169,11 @@ def readconf():
     global smsmode_user
     global smsmode_pass
     try:
-        smsmode_ip = cfg["Smsmode"]["ip"]
-        smsmode_port = cfg["Smsmode"]["port"]
-        smsmode_host = cfg["Smsmode"]["host"]
-        smsmode_user = cfg["Smsmode"]["user"]
-        smsmode_pass = cfg["Smsmode"]["pass"]
+        smsmode_ip = yaml_cfg["Smsmode"]["ip"]
+        smsmode_port = yaml_cfg["Smsmode"]["port"]
+        smsmode_host = yaml_cfg["Smsmode"]["host"]
+        smsmode_user = yaml_cfg["Smsmode"]["user"]
+        smsmode_pass = yaml_cfg["Smsmode"]["pass"]
     except KeyError:
         syslog.syslog(syslog.LOG_ERR, "Smsmode config couldn't be parsed")
 
@@ -180,8 +181,8 @@ def readconf():
     global irc_active
     global irc_fifo
     try:
-        irc_active = cfg["IRC"]["active"]
-        irc_fifo = cfg["IRC"]["fifo"]
+        irc_active = yaml_cfg["IRC"]["active"]
+        irc_fifo = yaml_cfg["IRC"]["fifo"]
     except KeyError:
         syslog.syslog(syslog.LOG_ERR, "irc config couldn't be parsed")
 
@@ -189,8 +190,8 @@ def readconf():
     oncallnumbers = []
 
     try:
-        for person in cfg["Astreinte"]:
-            oncallnumbers.append(cfg["Annuaire"][person])
+        for person in yaml_cfg["Astreinte"]:
+            oncallnumbers.append(yaml_cfg["Annuaire"][person])
     except KeyError:
         syslog.syslog(syslog.LOG_ERR,
                       "Config is wrong for the person(s) or their number(s)")

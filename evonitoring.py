@@ -67,7 +67,7 @@ def mobyt(oncallnumber, alert):
 
 
 def irc(alert):
-    # concat the multiple lines on a single line
+    # concat the multiple lines into a single line
     uniline = []
     for l in alert:
         if l == '\n':
@@ -79,7 +79,7 @@ def irc(alert):
     syslog.syslog('Alert sent to irc as well')
 
 
-# which alerting system should we use: mobyt, twilio
+# which alerting system should we use: mobyt, twilio or smsmode
 def decide_alerting(oncallnumber, cfg):
     # select the right sender depend of the number
     if oncallnumber[0:2] == "33":
@@ -96,7 +96,7 @@ def alert(oncallnumber, alert, system, cfg):
             pushover(alert)
         except:
             pass
-    # select the right sender depend of the number
+    # use the right alerting system
     if system == "mobyt":
         mobyt(oncallnumber, alert)
     elif system == "smsmode":
@@ -189,7 +189,7 @@ def readconf():
 
 
 if __name__ == "__main__":
-    # in case there's number1 and number2
+    # in case there are multiple numbers
     oncallnumbers = []
     # file may be chmod 000 because of the hack muteSMS_5m.sh
     try:

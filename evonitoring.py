@@ -80,7 +80,7 @@ def irc(alert):
 
 
 # which alerting system should we use: mobyt, twilio
-def decide_alerting(oncallnumber):
+def decide_alerting(oncallnumber, cfg):
     # select the right sender depend of the number
     if oncallnumber[0:2] == "33":
         system = cfg["FR_sender"]
@@ -89,7 +89,7 @@ def decide_alerting(oncallnumber):
     return system
 
 
-def alert(oncallnumber, alert, system):
+def alert(oncallnumber, alert, system, cfg):
     if cfg["pushover_active"] == "True":
         # it must not block nor kill the script
         try:
@@ -185,7 +185,7 @@ def readconf():
         syslog.syslog(syslog.LOG_ERR,
                       "Config is wrong for the person(s) or their number(s)")
 
-    return oncallnumbers
+    return oncallnumbers, cfg
 
 
 if __name__ == "__main__":
@@ -193,7 +193,7 @@ if __name__ == "__main__":
     oncallnumbers = []
     # file may be chmod 000 because of the hack muteSMS_5m.sh
     try:
-        oncallnumbers = readconf()
+        oncallnumbers, cfg = readconf()
         # what we got in stdin contains newlines
         alertlines = []
         for line in sys.stdin:
@@ -201,8 +201,8 @@ if __name__ == "__main__":
         alerttosend = ''.join(alertlines)
         # now we have everything so process the alert
         for oncallnumber in oncallnumbers:
-            system = decide_alerting(oncallnumber)
-            alert(oncallnumber, alerttosend[0:156], system)
+            system = decide_alerting(oncallnumber, cfg)
+            alert(oncallnumber, alerttosend[0:156], system, cfg)
     # if we can't read the phone number file, alerts must have been disabled
     except IOError:
         syslog.syslog(syslog.LOG_ERR, "Config file couldn't be opened")

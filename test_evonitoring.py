@@ -14,9 +14,10 @@ class TestEvonitoring(unittest.TestCase):
                          "33609876543")
         self.assertEqual(evonitoring.api_cfg["smsmode_pass"],
                          "mcpasswordface")
+        self.assertEqual(evonitoring.api_cfg["irc_fifo"], "test")
         # cfg
-        self.assertEqual(cfg["pushover_active"], "True")
-        self.assertEqual(cfg["irc_active"], "True")
+        self.assertTrue(cfg["pushover_active"])
+        self.assertTrue(cfg["irc_active"])
         self.assertEqual(cfg["FR_sender"], "smsmode")
         # oncallnumbers
         self.assertIsInstance(oncallnumbers, list)

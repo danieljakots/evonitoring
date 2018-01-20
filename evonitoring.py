@@ -89,7 +89,7 @@ def decide_alerting(oncallnumber, cfg):
 
 
 def alert(oncallnumber, alert, system, cfg):
-    if cfg["pushover_active"] == "True":
+    if cfg["pushover_active"]:
         # it must not block nor kill the script
         try:
             pushover(alert)
@@ -103,7 +103,7 @@ def alert(oncallnumber, alert, system, cfg):
     elif system == "twilio":
             twilio(oncallnumber, alert)
 
-    if cfg["irc_active"] == "True":
+    if cfg["irc_active"]:
         # it must not block nor kill the script
         try:
             irc(alert)
@@ -131,7 +131,10 @@ def readconf():
     try:
         api_cfg["pushover_token"] = yaml_cfg["Pushover"]["token"]
         api_cfg["pushover_user"] = yaml_cfg["Pushover"]["user"]
-        cfg["pushover_active"] = yaml_cfg["Pushover"]["active"]
+        if yaml_cfg["Pushover"]["active"] == "True":
+            cfg["pushover_active"] = True
+        else:
+            cfg["pushover_active"] = False
     except KeyError:
         syslog.syslog(syslog.LOG_ERR, "Pushover config couldn't be parsed")
 
@@ -169,7 +172,10 @@ def readconf():
 
     # IRC
     try:
-        cfg["irc_active"] = yaml_cfg["IRC"]["active"]
+        if yaml_cfg["IRC"]["active"] == "True":
+            cfg["irc_active"] = True
+        else:
+            cfg["irc_active"] = False
         api_cfg["irc_fifo"] = yaml_cfg["IRC"]["fifo"]
     except KeyError:
         syslog.syslog(syslog.LOG_ERR, "irc config couldn't be parsed")

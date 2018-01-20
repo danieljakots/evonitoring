@@ -18,8 +18,8 @@ def pushover(alert):
     conn = httplib.HTTPSConnection("api.pushover.net:443")
     conn.request("POST", "/1/messages.json",
                  urllib.urlencode({
-                     "token": pushover_token,
-                     "user": pushover_user,
+                     "token": cfg["pushover_token"],
+                     "user": cfg["pushover_user"],
                      "message": alert}),
                  {"Content-type": "application/x-www-form-urlencoded"})
     conn.getresponse()
@@ -27,15 +27,16 @@ def pushover(alert):
 
 def twilio(oncallnumber, alert):
     payload = {
-        'From': twilio_available_number,
+        'From': cfg["twilio_available_number"],
         'To': "+" + oncallnumber,
         'Body': alert
     }
     # send the text with twilio's api
     p = requests.post("https://api.twilio.com/2010-04-01/Accounts/" +
-                      twilio_account_sid + "/Messages",
+                      cfg["twilio_account_sid"] + "/Messages",
                       data=payload,
-                      auth=(twilio_account_sid, twilio_auth_token))
+                      auth=(cfg["twilio_account_sid"],
+                            cfg["twilio_auth_token"]))
     if p.status_code != 201:
         syslog.syslog(syslog.LOG_ERR, 'Problem while sending twilio')
     syslog.syslog('SMS sent with twilio to ' + oncallnumber)
@@ -44,9 +45,9 @@ def twilio(oncallnumber, alert):
 def smsmode(oncallnumber, alert):
     payload = {"numero": oncallnumber,
                "message": alert,
-               "pseudo": smsmode_user,
-               "pass": smsmode_pass}
-    g = requests.get("http://" + smsmode_host + "/http/1.6/sendSMS.do",
+               "pseudo": cfg["smsmode_user"],
+               "pass": cfg["smsmode_pass"]}
+    g = requests.get("http://" + cfg["smsmode_host"] + "/http/1.6/sendSMS.do",
                      params=payload)
     if g.status_code != 200:
         syslog.syslog(syslog.LOG_ERR, 'Problem while sending smsmode')
@@ -56,11 +57,11 @@ def smsmode(oncallnumber, alert):
 def mobyt(oncallnumber, alert):
     payload = {"rcpt": "+" + oncallnumber,
                "data": alert,
-               "user": mobyt_user,
-               "pass": mobyt_pass,
-               "sender": mobyt_sender,
+               "user": cfg["mobyt_user"],
+               "pass": cfg["mobyt_pass"],
+               "sender": cfg["mobyt_sender"],
                "qty": "n"}
-    g = requests.get("http://" + mobyt_host + "/sms/send.php",
+    g = requests.get("http://" + cfg["mobyt_host"] + "/sms/send.php",
                      params=payload)
     if g.status_code != 200:
         syslog.syslog(syslog.LOG_ERR, 'Problem while sending mobyt')
@@ -75,13 +76,13 @@ def irc(alert):
             l = ' '
         uniline.append(l)
     uniline.append('\n')
-    with open(irc_fifo, "a") as f:
+    with open(cfg["irc_fifo"], "a") as f:
         f.write(''.join(uniline))
     syslog.syslog('Alert sent to irc as well')
 
 # which alerting system should we use: mobyt, twilio
 def decide_alerting(oncallnumber, alert):
-    if pushover_active == "True":
+    if cfg["pushover_active"] == "True":
         # it must not block nor kill the script
         try:
             pushover(alert)
@@ -89,16 +90,16 @@ def decide_alerting(oncallnumber, alert):
             pass
     # select the right sender depend of the number
     if oncallnumber[0:2] == "33":
-        if FR_sender == "mobyt":
+        if cfg["FR_sender"] == "mobyt":
             mobyt(oncallnumber, alert)
-        elif FR_sender == "smsmode":
+        elif cfg["FR_sender"] == "smsmode":
             smsmode(oncallnumber, alert)
-        elif FR_sender == "twilio":
+        elif cfg["FR_sender"] == "twilio":
             twilio(oncallnumber, alert)
     else:
         twilio(oncallnumber, alert)
 
-    if irc_active == "True":
+    if cfg["irc_active"] == "True":
         # it must not block nor kill the script
         try:
             irc(alert)
@@ -110,79 +111,61 @@ def readconf():
     with open(CONFIG, 'r') as ymlfile:
         yaml_cfg = yaml.load(ymlfile)
 
+    global cfg
+    cfg = {}
+
     # twilio api key
-    global twilio_account_sid
-    global twilio_auth_token
-    global twilio_available_number
     try:
-        twilio_account_sid = yaml_cfg["Twilio"]["account_sid"]
-        twilio_auth_token = yaml_cfg["Twilio"]["auth_token"]
-        twilio_available_number = yaml_cfg["Twilio"]["sender"]
+        cfg["twilio_account_sid"] = yaml_cfg["Twilio"]["account_sid"]
+        cfg["twilio_auth_token"] = yaml_cfg["Twilio"]["auth_token"]
+        cfg["twilio_available_number"] = yaml_cfg["Twilio"]["sender"]
     except KeyError:
         syslog.syslog(syslog.LOG_ERR, "Twilio config couldn't be parsed")
 
     # pushover
-    global pushover_token
-    global pushover_user
-    global pushover_active
     try:
-        pushover_token = yaml_cfg["Pushover"]["token"]
-        pushover_user = yaml_cfg["Pushover"]["user"]
-        pushover_active = yaml_cfg["Pushover"]["active"]
+        cfg["pushover_token"] = yaml_cfg["Pushover"]["token"]
+        cfg["pushover_user"] = yaml_cfg["Pushover"]["user"]
+        cfg["pushover_active"] = yaml_cfg["Pushover"]["active"]
     except KeyError:
         syslog.syslog(syslog.LOG_ERR, "Pushover config couldn't be parsed")
 
     # sender system
-    global MOBYT_BIN
-    global FR_sender
     if yaml_cfg["FR-Astreinte-send"] == "mobyt":
-        FR_sender = "mobyt"
+        cfg["FR_sender"] = "mobyt"
     elif yaml_cfg["FR-Astreinte-send"] == "smsmode":
-        FR_sender = "smsmode"
+        cfg["FR_sender"] = "smsmode"
     elif yaml_cfg["FR-Astreinte-send"] == "twilio":
-        FR_sender = "twilio"
+        cfg["FR_sender"] = "twilio"
     else:
         syslog.syslog(syslog.LOG_ERR,
                       "Config erroneous FR-Astreinte-send is wrong")
 
     # mobyt
-    global mobyt_ip
-    global mobyt_port
-    global mobyt_host
-    global mobyt_user
-    global mobyt_pass
-    global mobyt_sender
     try:
-        mobyt_ip = yaml_cfg["Mobyt"]["ip"]
-        mobyt_port = yaml_cfg["Mobyt"]["port"]
-        mobyt_host = yaml_cfg["Mobyt"]["host"]
-        mobyt_user = yaml_cfg["Mobyt"]["user"]
-        mobyt_pass = yaml_cfg["Mobyt"]["pass"]
-        mobyt_sender = yaml_cfg["Mobyt"]["sender"]
+        cfg["mobyt_ip"] = yaml_cfg["Mobyt"]["ip"]
+        cfg["mobyt_port"] = yaml_cfg["Mobyt"]["port"]
+        cfg["mobyt_host"] = yaml_cfg["Mobyt"]["host"]
+        cfg["mobyt_user"] = yaml_cfg["Mobyt"]["user"]
+        cfg["mobyt_pass"] = yaml_cfg["Mobyt"]["pass"]
+        cfg["mobyt_sender"] = yaml_cfg["Mobyt"]["sender"]
     except KeyError:
         syslog.syslog(syslog.LOG_ERR, "Mobyt config couldn't be parsed")
 
     # smsmode
-    global smsmode_ip
-    global smsmode_port
-    global smsmode_host
-    global smsmode_user
-    global smsmode_pass
     try:
-        smsmode_ip = yaml_cfg["Smsmode"]["ip"]
-        smsmode_port = yaml_cfg["Smsmode"]["port"]
-        smsmode_host = yaml_cfg["Smsmode"]["host"]
-        smsmode_user = yaml_cfg["Smsmode"]["user"]
-        smsmode_pass = yaml_cfg["Smsmode"]["pass"]
+        cfg["smsmode_ip"] = yaml_cfg["Smsmode"]["ip"]
+        cfg["smsmode_port"] = yaml_cfg["Smsmode"]["port"]
+        cfg["smsmode_host"] = yaml_cfg["Smsmode"]["host"]
+        cfg["smsmode_user"] = yaml_cfg["Smsmode"]["user"]
+        cfg["smsmode_pass"] = yaml_cfg["Smsmode"]["pass"]
     except KeyError:
         syslog.syslog(syslog.LOG_ERR, "Smsmode config couldn't be parsed")
 
     # IRC
-    global irc_active
-    global irc_fifo
     try:
-        irc_active = yaml_cfg["IRC"]["active"]
-        irc_fifo = yaml_cfg["IRC"]["fifo"]
+        cfg["irc_active"] = yaml_cfg["IRC"]["active"]
+        cfg["irc_fifo"] = yaml_cfg["IRC"]["fifo"]
     except KeyError:
         syslog.syslog(syslog.LOG_ERR, "irc config couldn't be parsed")
 

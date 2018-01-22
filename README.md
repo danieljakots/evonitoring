@@ -19,7 +19,8 @@ failure). The goal is that the script never fails, if it encounters an
 error, it logs it and then continue the best it can.
 
 You need python-requests and python-yaml (Debian) or py-requests and
-py-yaml (OpenBSD). It currently supports only python2.
+py-yaml (OpenBSD). For now python2 is the goal but keeping in mind
+python3 is important.
 
 
 Before committing, make sure than `test_evonitoring.py` is OK and run flake8.

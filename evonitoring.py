@@ -1,10 +1,8 @@
 #!/usr/bin/env python2
 
 from __future__ import print_function
-import httplib
 import sys
 import syslog
-import urllib
 
 # you need to install py-requests (OpenBSD) or python-requests (Debian)
 # you need to install py-yaml     (OpenBSD) or python-yaml     (Debian)
@@ -16,14 +14,11 @@ CONFIG = "/etc/evonitoring.yml"
 
 def pushover(alert):
     """Send a pushover notification."""
-    conn = httplib.HTTPSConnection("api.pushover.net:443")
-    conn.request("POST", "/1/messages.json",
-                 urllib.urlencode({
-                     "token": api_cfg["pushover_token"],
-                     "user": api_cfg["pushover_user"],
-                     "message": alert}),
-                 {"Content-type": "application/x-www-form-urlencoded"})
-    conn.getresponse()
+    payload = {"token": api_cfg["pushover_token"],
+               "user": api_cfg["pushover_user"],
+               "message": alert}
+
+    requests.post("https://api.pushover.net/1/messages.json", params=payload)
 
 
 def twilio(oncallnumber, alert):

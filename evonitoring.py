@@ -15,6 +15,7 @@ CONFIG = "/etc/evonitoring.yml"
 
 
 def pushover(alert):
+    """Send a pushover notification."""
     conn = httplib.HTTPSConnection("api.pushover.net:443")
     conn.request("POST", "/1/messages.json",
                  urllib.urlencode({
@@ -26,6 +27,7 @@ def pushover(alert):
 
 
 def twilio(oncallnumber, alert):
+    """Send a text with twilio."""
     payload = {'From': api_cfg["twilio_available_number"],
                'To': "+" + oncallnumber,
                'Body': alert}
@@ -41,6 +43,7 @@ def twilio(oncallnumber, alert):
 
 
 def smsmode(oncallnumber, alert):
+    """Send a text with smsmode."""
     payload = {"numero": oncallnumber,
                "message": alert,
                "pseudo": api_cfg["smsmode_user"],
@@ -53,6 +56,7 @@ def smsmode(oncallnumber, alert):
 
 
 def mobyt(oncallnumber, alert):
+    """Send a text with mobyt."""
     payload = {"rcpt": "+" + oncallnumber,
                "data": alert,
                "user": api_cfg["mobyt_user"],
@@ -67,13 +71,14 @@ def mobyt(oncallnumber, alert):
 
 
 def irc(alert):
+    """Send a message to file which is actually a gateway to irc."""
     with open(api_cfg["irc_fifo"], "a") as f:
         f.write(convert_multiline(alert))
     syslog.syslog('Alert sent to irc as well')
 
 
 def convert_multiline(text):
-    # concat the multiple lines into a single line
+    """Convert a multi-line string to one-line one."""
     line = []
     for char in text:
         if char == '\n':
@@ -85,6 +90,7 @@ def convert_multiline(text):
 
 
 def decide_alerting(oncallnumber, cfg):
+    """Return the text provider to use depending on the conf and the number."""
     # select the right sender depending of the number
     if oncallnumber[0:2] == "33":
         system = cfg["FR_sender"]
@@ -117,6 +123,15 @@ def alert(oncallnumber, alert, system, cfg):
 
 
 def readconf():
+    """Parse the configuration file.
+
+    It uses 3 data structures:
+    - api_cfg: a global dict that contains the API keys
+    - cfg: a *returned* dict with the state (in/active) of irc, pushover
+    - oncallnumbers: a *returned* list of numbers to send the alert to
+
+    The policy is to never fail but just log if there's a problem.
+    """
     with open(CONFIG, 'r') as ymlfile:
         yaml_cfg = yaml.load(ymlfile)
 

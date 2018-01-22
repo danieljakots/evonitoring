@@ -3,6 +3,7 @@
 import unittest
 import evonitoring
 
+evonitoring.CONFIG = "./evonitoring.yml"
 
 class TestEvonitoring(unittest.TestCase):
 

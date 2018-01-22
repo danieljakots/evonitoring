@@ -32,6 +32,19 @@ class TestEvonitoring(unittest.TestCase):
         self.assertEqual(evonitoring.decide_alerting("15140987654", cfg),
                          "twilio")
 
+    def test_convert_multiline(self):
+        multiline = (
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit." + "\n"
+            "In sodales scelerisque facilisis." + "\n"
+            "Vestibulum sit amet mattis leo." + "\n"
+        )
+        uniline = (
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
+            "In sodales scelerisque facilisis. "
+            "Vestibulum sit amet mattis leo. "
+            )
+        self.assertEqual(evonitoring.convert_multiline(multiline),
+                         uniline + "\n")
 
 if __name__ == '__main__':
     unittest.main()

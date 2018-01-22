@@ -67,16 +67,21 @@ def mobyt(oncallnumber, alert):
 
 
 def irc(alert):
-    # concat the multiple lines into a single line
-    uniline = []
-    for l in alert:
-        if l == '\n':
-            l = ' '
-        uniline.append(l)
-    uniline.append('\n')
     with open(api_cfg["irc_fifo"], "a") as f:
-        f.write(''.join(uniline))
+        f.write(convert_multiline(alert))
     syslog.syslog('Alert sent to irc as well')
+
+
+def convert_multiline(text):
+    # concat the multiple lines into a single line
+    line = []
+    for char in text:
+        if char == '\n':
+            char = ' '
+        line.append(char)
+    line.append('\n')
+    string = ''.join(line)
+    return string
 
 
 def decide_alerting(oncallnumber, cfg):

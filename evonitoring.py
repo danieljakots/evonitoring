@@ -89,6 +89,7 @@ def decide_alerting(oncallnumber, cfg):
 
 
 def alert(oncallnumber, alert, system, cfg):
+    """Call the chosen system(s) to send the alert."""
     if cfg["pushover_active"]:
         # it must not block nor kill the script
         try:

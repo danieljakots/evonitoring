@@ -12,7 +12,7 @@ import yaml
 CONFIG = "/etc/evonitoring.yml"
 
 
-def pushover(alert):
+def notify_pushover(alert):
     """Send a pushover notification."""
     payload = {"token": api_cfg["pushover_token"],
                "user": api_cfg["pushover_user"],
@@ -21,7 +21,7 @@ def pushover(alert):
     requests.post("https://api.pushover.net/1/messages.json", params=payload)
 
 
-def twilio(oncallnumber, alert):
+def notify_twilio(oncallnumber, alert):
     """Send a text with twilio."""
     payload = {'From': api_cfg["twilio_available_number"],
                'To': "+" + oncallnumber,
@@ -37,7 +37,7 @@ def twilio(oncallnumber, alert):
     syslog.syslog('SMS sent with twilio to ' + oncallnumber)
 
 
-def smsmode(oncallnumber, alert):
+def notify_smsmode(oncallnumber, alert):
     """Send a text with smsmode."""
     payload = {"numero": oncallnumber,
                "message": alert,
@@ -50,7 +50,7 @@ def smsmode(oncallnumber, alert):
     syslog.syslog('SMS sent with smsmode to ' + oncallnumber)
 
 
-def mobyt(oncallnumber, alert):
+def notify_mobyt(oncallnumber, alert):
     """Send a text with mobyt."""
     payload = {"rcpt": "+" + oncallnumber,
                "data": alert,
@@ -65,7 +65,7 @@ def mobyt(oncallnumber, alert):
     syslog.syslog('SMS sent with mobyt to ' + oncallnumber)
 
 
-def irc(alert):
+def notify_irc(alert):
     """Send a message to file which is actually a gateway to irc."""
     with open(api_cfg["irc_fifo"], "a") as f:
         f.write(convert_multiline(alert))
@@ -97,11 +97,11 @@ def alert(oncallnumber, alert, system, cfg):
             pass
     # use the right alerting system
     if system == "mobyt":
-        mobyt(oncallnumber, alert)
+        notify_mobyt(oncallnumber, alert)
     elif system == "smsmode":
-        smsmode(oncallnumber, alert)
+        notify_smsmode(oncallnumber, alert)
     elif system == "twilio":
-        twilio(oncallnumber, alert)
+        notify_twilio(oncallnumber, alert)
 
     if cfg["irc_active"]:
         # it must not block nor kill the script

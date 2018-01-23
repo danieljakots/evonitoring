@@ -101,7 +101,7 @@ def alert(oncallnumber, alert, system, cfg):
     elif system == "smsmode":
         smsmode(oncallnumber, alert)
     elif system == "twilio":
-            twilio(oncallnumber, alert)
+        twilio(oncallnumber, alert)
 
     if cfg["irc_active"]:
         # it must not block nor kill the script

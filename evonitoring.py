@@ -90,13 +90,7 @@ def decide_alerting(oncallnumber, cfg):
 
 def alert(oncallnumber, alert, notify_system, cfg):
     """Call the chosen system(s) to send the alert."""
-    if cfg["pushover_active"]:
-        # it must not block nor kill the script
-        try:
-            pushover(alert)
-        except:
-            pass
-    # use the right alerting system
+    # first class citizen
     if notify_system == "mobyt":
         notify_mobyt(oncallnumber, alert)
     elif notify_system == "smsmode":
@@ -104,6 +98,13 @@ def alert(oncallnumber, alert, notify_system, cfg):
     elif notify_system == "twilio":
         notify_twilio(oncallnumber, alert)
 
+    # second class citizen
+    if cfg["pushover_active"]:
+        # it must not block nor kill the script
+        try:
+            pushover(alert)
+        except:
+            pass
     if cfg["irc_active"]:
         # it must not block nor kill the script
         try:

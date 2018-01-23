@@ -208,7 +208,7 @@ if __name__ == "__main__":
     # file may be chmod 000 because of the hack muteSMS_5m.sh
     try:
         oncallnumbers, cfg = readconf()
-        # what we got in stdin contains newlines
+        # what we got in stdin contains \n but we want it to be a single string
         alertlines = []
         for line in sys.stdin:
             alertlines.append(line)

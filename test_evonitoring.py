@@ -44,7 +44,7 @@ class TestEvonitoring(unittest.TestCase):
         uniline = (
             "Lorem ipsum dolor sit amet, consectetur adipiscing elit. "
             "In sodales scelerisque facilisis. "
-            "Vestibulum sit amet mattis leo. "
+            "Vestibulum sit amet mattis leo."
             )
         self.assertEqual(evonitoring.convert_multiline(multiline),
                          uniline + "\n")

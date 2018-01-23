@@ -72,19 +72,10 @@ def irc(alert):
     syslog.syslog('Alert sent to irc as well')
 
 
-# I'm sure there's a better way to do that
 def convert_multiline(text):
     """Convert a multi-line string to one-line one."""
-    line = []
-    # check each character and replace it with a space if it's a newline
-    for char in text:
-        if char == '\n':
-            char = ' '
-        line.append(char)
-    line.append('\n')
-    # from the array of characters, create a string
-    string = ''.join(line)
-    return string
+    oneline = " ".join(text.splitlines()) + "\n"
+    return oneline
 
 
 def decide_alerting(oncallnumber, cfg):

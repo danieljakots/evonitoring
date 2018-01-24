@@ -113,7 +113,7 @@ def alert(oncallnumber, alert, notify_system, cfg):
             pass
 
 
-def readconf():
+def readconf(config):
     """Parse the configuration file.
 
     It uses 3 data structures:
@@ -123,7 +123,7 @@ def readconf():
 
     The policy is to never fail but just log if there's a problem.
     """
-    with open(CONFIG, 'r') as ymlfile:
+    with open(config, 'r') as ymlfile:
         yaml_cfg = yaml.load(ymlfile)
 
     global api_cfg
@@ -209,7 +209,7 @@ if __name__ == "__main__":
     oncallnumbers = []
     # file may be chmod 000 because of the hack muteSMS_5m.sh
     try:
-        oncallnumbers, cfg = readconf()
+        oncallnumbers, cfg = readconf(CONFIG)
         # what we got in stdin contains \n but we want it to be a single string
         alertlines = []
         for line in sys.stdin:

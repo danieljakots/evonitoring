@@ -15,26 +15,24 @@ IRC:
 
 # Parametres fournisseurs
 Mobyt:
-  ip: "192.0.2.1"
-  port: "80"
-  host: "mobyt.example.com"
   user: "U53R"
   pass: "P455w0rD"
   sender: "33609876543"
+  api_url: "http://mobyt.example.com/sms/send.php"
 
 Smsmode:
-  ip: "192.0.2.2"
-  port: "80"
-  host: "smsmode.example.com"
   user: "passowrdy"
   pass: "mcpasswordface"
+  api_url: "http://smsmode.example.com/http/1.6/sendSMS.do"
 
 Twilio:
   account_sid: "11235811"
   auth_token: "3141592654"
   sender: "+14385556677"
+  api_url: "https://api.twilio.com/2010-04-01/Accounts/11235811/Messages"
 
 Pushover:
   token: "T0k3n"
   user: "johndoe"
   active: "True"
+  api_url: "https://api.pushover.net/1/messages.json"

@@ -9,7 +9,7 @@ import syslog
 import requests
 import yaml
 
-CONFIG = "/etc/evonitoring.yml"
+CONFIG_FILE = "/etc/evonitoring.yml"
 
 
 def notify_pushover(alert):
@@ -117,7 +117,7 @@ def alert(oncallnumber, alert, notify_system, cfg):
             pass
 
 
-def readconf(config):
+def readconf(config_file):
     """Parse the configuration file.
 
     It uses 3 data structures:
@@ -127,7 +127,7 @@ def readconf(config):
 
     The policy is to never fail but just log if there's a problem.
     """
-    with open(config, 'r') as ymlfile:
+    with open(config_file, 'r') as ymlfile:
         yaml_cfg = yaml.load(ymlfile)
 
     global api_cfg
@@ -211,7 +211,7 @@ if __name__ == "__main__":
     oncallnumbers = []
     # file may be chmod 000 because of the hack muteSMS_5m.sh
     try:
-        oncallnumbers, cfg = readconf(CONFIG)
+        oncallnumbers, cfg = readconf(CONFIG_FILE)
         # what we got in stdin contains \n but we want it to be a single string
         alertlines = []
         for line in sys.stdin:

@@ -3,13 +3,13 @@
 import unittest
 import evonitoring
 
-config = "./evonitoring.yml"
+config_file = "./evonitoring.yml"
 
 
 class TestEvonitoring(unittest.TestCase):
 
     def test_readconf(self):
-        oncallnumbers, cfg = evonitoring.readconf(config)
+        oncallnumbers, cfg = evonitoring.readconf(config_file)
         # api_cfg
         self.assertEqual(evonitoring.api_cfg["twilio_api_url"],
                          "https://api.twilio.com/2010-04-01/Accounts/" +
@@ -31,7 +31,7 @@ class TestEvonitoring(unittest.TestCase):
         self.assertEqual(''.join(oncallnumbers[0]), "33612345678")
 
     def test_decide_alerting(self):
-        oncallnumbers, cfg = evonitoring.readconf(config)
+        oncallnumbers, cfg = evonitoring.readconf(config_file)
         self.assertEqual(evonitoring.decide_alerting("33612345678", cfg),
                          "smsmode")
         self.assertEqual(evonitoring.decide_alerting("14381234567", cfg),

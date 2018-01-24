@@ -104,13 +104,13 @@ def alert(oncallnumber, alert, notify_system, cfg):
     if cfg["pushover_active"]:
         # it must not block nor kill the script
         try:
-            pushover(alert)
+            notify_pushover(alert)
         except:
             pass
     if cfg["irc_active"]:
         # it must not block nor kill the script
         try:
-            irc(alert)
+            notify_irc(alert)
         except:
             pass
 

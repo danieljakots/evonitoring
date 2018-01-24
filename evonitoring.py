@@ -89,12 +89,16 @@ def decide_alerting(oncallnumber, cfg):
 def alert(oncallnumber, alert, notify_system, cfg):
     """Call the chosen system(s) to send the alert."""
     # first class citizen
-    if notify_system == "mobyt":
-        notify_mobyt(oncallnumber, alert)
-    elif notify_system == "smsmode":
-        notify_smsmode(oncallnumber, alert)
-    elif notify_system == "twilio":
-        notify_twilio(oncallnumber, alert)
+    try:
+        if notify_system == "mobyt":
+            notify_mobyt(oncallnumber, alert)
+        elif notify_system == "smsmode":
+            notify_smsmode(oncallnumber, alert)
+        elif notify_system == "twilio":
+            notify_twilio(oncallnumber, alert)
+    except:
+        syslog.syslog(syslog.LOG_ERR,
+                      "Couldn't call a notify function, check the config file")
 
     # second class citizen
     if cfg["pushover_active"]:

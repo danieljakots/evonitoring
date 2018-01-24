@@ -5,13 +5,14 @@ import evonitoring
 
 config = "./evonitoring.yml"
 
+
 class TestEvonitoring(unittest.TestCase):
 
     def test_readconf(self):
         oncallnumbers, cfg = evonitoring.readconf(config)
         # api_cfg
         self.assertEqual(evonitoring.api_cfg["twilio_api_url"],
-                         "https://api.twilio.com/2010-04-01/Accounts/"+
+                         "https://api.twilio.com/2010-04-01/Accounts/" +
                          evonitoring.api_cfg["twilio_account_sid"] +
                          "/Messages")
         self.assertEqual(evonitoring.api_cfg["pushover_api_url"],
@@ -51,6 +52,7 @@ class TestEvonitoring(unittest.TestCase):
             )
         self.assertEqual(evonitoring.convert_multiline(multiline),
                          uniline + "\n")
+
 
 if __name__ == '__main__':
     unittest.main()

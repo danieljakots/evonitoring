@@ -97,6 +97,8 @@ def alert(oncallnumber, alert, notify_system, cfg):
         elif notify_system == "twilio":
             notify_twilio(oncallnumber, alert)
     except:
+        # we don't fallback on another notify system because there's a whole
+        # monitoring system in backup using another provider
         syslog.syslog(syslog.LOG_ERR,
                       "Couldn't call a notify function, check the config file")
 

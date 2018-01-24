@@ -80,21 +80,21 @@ def decide_alerting(oncallnumber, cfg):
     """Return the text provider to use depending on the conf and the number."""
     # select the right sender depending of the number
     if oncallnumber[0:2] == "33":
-        notify_system = cfg["FR_sender"]
+        notifier = cfg["FR_sender"]
     else:
-        notify_system = "twilio"
-    return notify_system
+        notifier = "twilio"
+    return notifier
 
 
-def alert(oncallnumber, alert, notify_system, cfg):
+def alert(oncallnumber, alert, notifier, cfg):
     """Call the chosen system(s) to send the alert."""
     # first class citizen
     try:
-        if notify_system == "mobyt":
+        if notifier == "mobyt":
             notify_mobyt(oncallnumber, alert)
-        elif notify_system == "smsmode":
+        elif notifier == "smsmode":
             notify_smsmode(oncallnumber, alert)
-        elif notify_system == "twilio":
+        elif notifier == "twilio":
             notify_twilio(oncallnumber, alert)
     except:
         # we don't fallback on another notify system because there's a whole
@@ -219,8 +219,8 @@ if __name__ == "__main__":
         alerttosend = ''.join(alertlines)
         # now we have everything so process the alert
         for oncallnumber in oncallnumbers:
-            notify_system = decide_alerting(oncallnumber, cfg)
-            alert(oncallnumber, alerttosend[0:156], notify_system, cfg)
+            notifier = decide_alerting(oncallnumber, cfg)
+            alert(oncallnumber, alerttosend[0:156], notifier, cfg)
     # if we can't read the phone number file, alerts must have been disabled
     except IOError:
         syslog.syslog(syslog.LOG_ERR, "Config file couldn't be opened")

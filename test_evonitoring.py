@@ -10,13 +10,16 @@ class TestEvonitoring(unittest.TestCase):
     def test_readconf(self):
         oncallnumbers, cfg = evonitoring.readconf(config)
         # api_cfg
-        self.assertEqual(evonitoring.api_cfg["twilio_available_number"],
-                         "+14385556677")
-        self.assertEqual(evonitoring.api_cfg["pushover_user"], "johndoe")
-        self.assertEqual(evonitoring.api_cfg["mobyt_sender"],
-                         "33609876543")
-        self.assertEqual(evonitoring.api_cfg["smsmode_pass"],
-                         "mcpasswordface")
+        self.assertEqual(evonitoring.api_cfg["twilio_api_url"],
+                         "https://api.twilio.com/2010-04-01/Accounts/"+
+                         evonitoring.api_cfg["twilio_account_sid"] +
+                         "/Messages")
+        self.assertEqual(evonitoring.api_cfg["pushover_api_url"],
+                         "https://api.pushover.net/1/messages.json")
+        self.assertEqual(evonitoring.api_cfg["mobyt_api_url"],
+                         "http://mobyt.example.com/sms/send.php")
+        self.assertEqual(evonitoring.api_cfg["smsmode_api_url"],
+                         "http://smsmode.example.com/http/1.6/sendSMS.do")
         self.assertEqual(evonitoring.api_cfg["irc_fifo"], "test")
         # cfg
         self.assertTrue(cfg["pushover_active"])

@@ -18,7 +18,7 @@ def notify_pushover(alert):
                "user": api_cfg["pushover_user"],
                "message": alert}
 
-    requests.post("https://api.pushover.net/1/messages.json", params=payload)
+    requests.post(api_cfg["pushover_api_url"], params=payload)
 
 
 def notify_twilio(oncallnumber, alert):
@@ -27,7 +27,7 @@ def notify_twilio(oncallnumber, alert):
                'To': "+" + oncallnumber,
                'Body': alert}
     # send the text with twilio's api
-    p = requests.post("https://api.twilio.com/2010-04-01/Accounts/" +
+    p = requests.post(api_cfg["twilio_api_url"] +
                       api_cfg["twilio_account_sid"] + "/Messages",
                       data=payload,
                       auth=(api_cfg["twilio_account_sid"],
@@ -43,8 +43,7 @@ def notify_smsmode(oncallnumber, alert):
                "message": alert,
                "pseudo": api_cfg["smsmode_user"],
                "pass": api_cfg["smsmode_pass"]}
-    g = requests.get("http://" + api_cfg["smsmode_host"] +
-                     "/http/1.6/sendSMS.do", params=payload)
+    g = requests.get(api_cfg["smsmode_api_url"], params=payload)
     if g.status_code != 200:
         syslog.syslog(syslog.LOG_ERR, 'Problem while sending smsmode')
     syslog.syslog('SMS sent with smsmode to ' + oncallnumber)
@@ -58,8 +57,7 @@ def notify_mobyt(oncallnumber, alert):
                "pass": api_cfg["mobyt_pass"],
                "sender": api_cfg["mobyt_sender"],
                "qty": "n"}
-    g = requests.get("http://" + api_cfg["mobyt_host"] + "/sms/send.php",
-                     params=payload)
+    g = requests.get(api_cfg["mobyt_api_url"], params=payload)
     if g.status_code != 200:
         syslog.syslog(syslog.LOG_ERR, 'Problem while sending mobyt')
     syslog.syslog('SMS sent with mobyt to ' + oncallnumber)
@@ -135,6 +133,7 @@ def readconf(config):
         api_cfg["twilio_account_sid"] = yaml_cfg["Twilio"]["account_sid"]
         api_cfg["twilio_auth_token"] = yaml_cfg["Twilio"]["auth_token"]
         api_cfg["twilio_available_number"] = yaml_cfg["Twilio"]["sender"]
+        api_cfg["twilio_api_url"] = yaml_cfg["Twilio"]["api_url"]
     except KeyError:
         syslog.syslog(syslog.LOG_ERR, "Twilio config couldn't be parsed")
 
@@ -142,6 +141,7 @@ def readconf(config):
     try:
         api_cfg["pushover_token"] = yaml_cfg["Pushover"]["token"]
         api_cfg["pushover_user"] = yaml_cfg["Pushover"]["user"]
+        api_cfg["pushover_api_url"] = yaml_cfg["Pushover"]["api_url"]
         if yaml_cfg["Pushover"]["active"] == "True":
             cfg["pushover_active"] = True
         else:
@@ -162,22 +162,18 @@ def readconf(config):
 
     # mobyt
     try:
-        api_cfg["mobyt_ip"] = yaml_cfg["Mobyt"]["ip"]
-        api_cfg["mobyt_port"] = yaml_cfg["Mobyt"]["port"]
-        api_cfg["mobyt_host"] = yaml_cfg["Mobyt"]["host"]
         api_cfg["mobyt_user"] = yaml_cfg["Mobyt"]["user"]
         api_cfg["mobyt_pass"] = yaml_cfg["Mobyt"]["pass"]
         api_cfg["mobyt_sender"] = yaml_cfg["Mobyt"]["sender"]
+        api_cfg["mobyt_api_url"] = yaml_cfg["Mobyt"]["api_url"]
     except KeyError:
         syslog.syslog(syslog.LOG_ERR, "Mobyt config couldn't be parsed")
 
     # smsmode
     try:
-        api_cfg["smsmode_ip"] = yaml_cfg["Smsmode"]["ip"]
-        api_cfg["smsmode_port"] = yaml_cfg["Smsmode"]["port"]
-        api_cfg["smsmode_host"] = yaml_cfg["Smsmode"]["host"]
         api_cfg["smsmode_user"] = yaml_cfg["Smsmode"]["user"]
         api_cfg["smsmode_pass"] = yaml_cfg["Smsmode"]["pass"]
+        api_cfg["smsmode_api_url"] = yaml_cfg["Smsmode"]["api_url"]
     except KeyError:
         syslog.syslog(syslog.LOG_ERR, "Smsmode config couldn't be parsed")
 

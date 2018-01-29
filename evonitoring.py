@@ -1,9 +1,7 @@
 #!/usr/bin/env python2
 
 from __future__ import print_function
-import httplib
 import sys
-import urllib
 import syslog
 
 # you need to install py-requests (OpenBSD) or python-requests (Debian)
@@ -11,177 +9,186 @@ import syslog
 import requests
 import yaml
 
-CONFIG = "/etc/evonitoring.yml"
+CONFIG_FILE = "/etc/evonitoring.yml"
 
 
-def pushover(alert):
-    conn = httplib.HTTPSConnection("api.pushover.net:443")
-    conn.request("POST", "/1/messages.json",
-                 urllib.urlencode({
-                     "token": pushover_token,
-                     "user": pushover_user,
-                     "message": alert}),
-                 {"Content-type": "application/x-www-form-urlencoded"})
-    conn.getresponse()
+def notify_pushover(alert):
+    """Send a pushover notification."""
+    payload = {"token": api_cfg["pushover_token"],
+               "user": api_cfg["pushover_user"],
+               "message": alert}
+
+    requests.post(api_cfg["pushover_api_url"], params=payload)
 
 
-def twilio(oncallnumber, alert):
-    payload = {
-        'From': twilio_available_number,
-        'To': "+" + oncallnumber,
-        'Body': alert
-    }
+def notify_twilio(oncallnumber, alert):
+    """Send a text with twilio."""
+    payload = {'From': api_cfg["twilio_available_number"],
+               'To': "+" + oncallnumber,
+               'Body': alert}
     # send the text with twilio's api
-    p = requests.post("https://api.twilio.com/2010-04-01/Accounts/" +
-                      twilio_account_sid + "/Messages",
+    p = requests.post(api_cfg["twilio_api_url"],
                       data=payload,
-                      auth=(twilio_account_sid, twilio_auth_token))
+                      auth=(api_cfg["twilio_account_sid"],
+                            api_cfg["twilio_auth_token"]))
     if p.status_code != 201:
         syslog.syslog(syslog.LOG_ERR, 'Problem while sending twilio')
     syslog.syslog('SMS sent with twilio to ' + oncallnumber)
 
 
-def smsmode(oncallnumber, alert):
+def notify_smsmode(oncallnumber, alert):
+    """Send a text with smsmode."""
     payload = {"numero": oncallnumber,
                "message": alert,
-               "pseudo": smsmode_user,
-               "pass": smsmode_pass}
-    g = requests.get("http://" + smsmode_host + "/http/1.6/sendSMS.do",
-                     params=payload)
+               "pseudo": api_cfg["smsmode_user"],
+               "pass": api_cfg["smsmode_pass"]}
+    g = requests.get(api_cfg["smsmode_api_url"], params=payload)
     if g.status_code != 200:
         syslog.syslog(syslog.LOG_ERR, 'Problem while sending smsmode')
     syslog.syslog('SMS sent with smsmode to ' + oncallnumber)
 
 
-def mobyt(oncallnumber, alert):
+def notify_mobyt(oncallnumber, alert):
+    """Send a text with mobyt."""
     payload = {"rcpt": "+" + oncallnumber,
                "data": alert,
-               "user": mobyt_user,
-               "pass": mobyt_pass,
-               "sender": mobyt_sender,
+               "user": api_cfg["mobyt_user"],
+               "pass": api_cfg["mobyt_pass"],
+               "sender": api_cfg["mobyt_sender"],
                "qty": "n"}
-    g = requests.get("http://" + mobyt_host + "/sms/send.php",
-                     params=payload)
+    g = requests.get(api_cfg["mobyt_api_url"], params=payload)
     if g.status_code != 200:
         syslog.syslog(syslog.LOG_ERR, 'Problem while sending mobyt')
     syslog.syslog('SMS sent with mobyt to ' + oncallnumber)
 
 
-def irc(alert):
-    # concat the multiple lines on a single line
-    uniline = []
-    for l in alert:
-        if l == '\n':
-            l = ' '
-        uniline.append(l)
-    uniline.append('\n')
-    with open(irc_fifo, "a") as f:
-        f.write(''.join(uniline))
+def notify_irc(alert):
+    """Send a message to file which is actually a gateway to irc."""
+    with open(api_cfg["irc_fifo"], "a") as f:
+        f.write(convert_multiline(alert))
     syslog.syslog('Alert sent to irc as well')
 
-# which alerting system should we use: mobyt, twilio
-def decide_alerting(oncallnumber, alert):
-    if pushover_active == "True":
-        # it must not block nor kill the script
-        try:
-            pushover(alert)
-        except:
-            pass
-    # select the right sender depend of the number
+
+def convert_multiline(text):
+    """Convert a multi-line string to one-line one."""
+    oneline = " ".join(text.splitlines()) + "\n"
+    return oneline
+
+
+def decide_alerting(oncallnumber, cfg):
+    """Return the text provider to use depending on the conf and the number."""
+    # select the right sender depending of the number
     if oncallnumber[0:2] == "33":
-        if FR_sender == "mobyt":
-            mobyt(oncallnumber, alert)
-        elif FR_sender == "smsmode":
-            smsmode(oncallnumber, alert)
-        elif FR_sender == "twilio":
-            twilio(oncallnumber, alert)
+        notifier = cfg["FR_sender"]
     else:
-        twilio(oncallnumber, alert)
+        notifier = "twilio"
+    return notifier
 
-    if irc_active == "True":
+
+def alert(oncallnumber, alert, notifier, cfg):
+    """Call the chosen system(s) to send the alert."""
+    # first class citizen
+    try:
+        if notifier == "mobyt":
+            notify_mobyt(oncallnumber, alert)
+        elif notifier == "smsmode":
+            notify_smsmode(oncallnumber, alert)
+        elif notifier == "twilio":
+            notify_twilio(oncallnumber, alert)
+    except:
+        # we don't fallback on another notify system because there's a whole
+        # monitoring system in backup using another provider
+        syslog.syslog(syslog.LOG_ERR,
+                      "Couldn't call a notify function, check the config file")
+
+    # second class citizen
+    if cfg["pushover_active"]:
         # it must not block nor kill the script
         try:
-            irc(alert)
+            notify_pushover(alert)
+        except:
+            pass
+    if cfg["irc_active"]:
+        # it must not block nor kill the script
+        try:
+            notify_irc(alert)
         except:
             pass
 
 
-def readconf():
-    with open(CONFIG, 'r') as ymlfile:
-        cfg = yaml.load(ymlfile)
+def readconf(config_file):
+    """Parse the configuration file.
+
+    It uses 3 data structures:
+    - api_cfg: a global dict that contains the API keys
+    - cfg: a *returned* dict with the state (in/active) of irc, pushover
+    - oncallnumbers: a *returned* list of numbers to send the alert to
+
+    The policy is to never fail but just log if there's a problem.
+    """
+    with open(config_file, 'r') as ymlfile:
+        yaml_cfg = yaml.load(ymlfile)
+
+    global api_cfg
+    api_cfg = {}
+    cfg = {}
+
     # twilio api key
-    global twilio_account_sid
-    global twilio_auth_token
-    global twilio_available_number
     try:
-        twilio_account_sid = cfg["Twilio"]["account_sid"]
-        twilio_auth_token = cfg["Twilio"]["auth_token"]
-        twilio_available_number = cfg["Twilio"]["sender"]
+        api_cfg["twilio_account_sid"] = yaml_cfg["Twilio"]["account_sid"]
+        api_cfg["twilio_auth_token"] = yaml_cfg["Twilio"]["auth_token"]
+        api_cfg["twilio_available_number"] = yaml_cfg["Twilio"]["sender"]
+        api_cfg["twilio_api_url"] = yaml_cfg["Twilio"]["api_url"]
     except KeyError:
         syslog.syslog(syslog.LOG_ERR, "Twilio config couldn't be parsed")
 
     # pushover
-    global pushover_token
-    global pushover_user
-    global pushover_active
     try:
-        pushover_token = cfg["Pushover"]["token"]
-        pushover_user = cfg["Pushover"]["user"]
-        pushover_active = cfg["Pushover"]["active"]
+        api_cfg["pushover_token"] = yaml_cfg["Pushover"]["token"]
+        api_cfg["pushover_user"] = yaml_cfg["Pushover"]["user"]
+        api_cfg["pushover_api_url"] = yaml_cfg["Pushover"]["api_url"]
+        if yaml_cfg["Pushover"]["active"] == "True":
+            cfg["pushover_active"] = True
+        else:
+            cfg["pushover_active"] = False
     except KeyError:
         syslog.syslog(syslog.LOG_ERR, "Pushover config couldn't be parsed")
 
     # sender system
-    global MOBYT_BIN
-    global FR_sender
-    if cfg["FR-Astreinte-send"] == "mobyt":
-        FR_sender = "mobyt"
-    elif cfg["FR-Astreinte-send"] == "smsmode":
-        FR_sender = "smsmode"
-    elif cfg["FR-Astreinte-send"] == "twilio":
-        FR_sender = "twilio"
+    if yaml_cfg["FR-Astreinte-send"] == "mobyt":
+        cfg["FR_sender"] = "mobyt"
+    elif yaml_cfg["FR-Astreinte-send"] == "smsmode":
+        cfg["FR_sender"] = "smsmode"
+    elif yaml_cfg["FR-Astreinte-send"] == "twilio":
+        cfg["FR_sender"] = "twilio"
     else:
         syslog.syslog(syslog.LOG_ERR,
                       "Config erroneous FR-Astreinte-send is wrong")
 
     # mobyt
-    global mobyt_ip
-    global mobyt_port
-    global mobyt_host
-    global mobyt_user
-    global mobyt_pass
-    global mobyt_sender
     try:
-        mobyt_ip = cfg["Mobyt"]["ip"]
-        mobyt_port = cfg["Mobyt"]["port"]
-        mobyt_host = cfg["Mobyt"]["host"]
-        mobyt_user = cfg["Mobyt"]["user"]
-        mobyt_pass = cfg["Mobyt"]["pass"]
-        mobyt_sender = cfg["Mobyt"]["sender"]
+        api_cfg["mobyt_user"] = yaml_cfg["Mobyt"]["user"]
+        api_cfg["mobyt_pass"] = yaml_cfg["Mobyt"]["pass"]
+        api_cfg["mobyt_sender"] = yaml_cfg["Mobyt"]["sender"]
+        api_cfg["mobyt_api_url"] = yaml_cfg["Mobyt"]["api_url"]
     except KeyError:
         syslog.syslog(syslog.LOG_ERR, "Mobyt config couldn't be parsed")
 
     # smsmode
-    global smsmode_ip
-    global smsmode_port
-    global smsmode_host
-    global smsmode_user
-    global smsmode_pass
     try:
-        smsmode_ip = cfg["Smsmode"]["ip"]
-        smsmode_port = cfg["Smsmode"]["port"]
-        smsmode_host = cfg["Smsmode"]["host"]
-        smsmode_user = cfg["Smsmode"]["user"]
-        smsmode_pass = cfg["Smsmode"]["pass"]
+        api_cfg["smsmode_user"] = yaml_cfg["Smsmode"]["user"]
+        api_cfg["smsmode_pass"] = yaml_cfg["Smsmode"]["pass"]
+        api_cfg["smsmode_api_url"] = yaml_cfg["Smsmode"]["api_url"]
     except KeyError:
         syslog.syslog(syslog.LOG_ERR, "Smsmode config couldn't be parsed")
 
     # IRC
-    global irc_active
-    global irc_fifo
     try:
-        irc_active = cfg["IRC"]["active"]
-        irc_fifo = cfg["IRC"]["fifo"]
+        if yaml_cfg["IRC"]["active"] == "True":
+            cfg["irc_active"] = True
+        else:
+            cfg["irc_active"] = False
+        api_cfg["irc_fifo"] = yaml_cfg["IRC"]["fifo"]
     except KeyError:
         syslog.syslog(syslog.LOG_ERR, "irc config couldn't be parsed")
 
@@ -189,29 +196,30 @@ def readconf():
     oncallnumbers = []
 
     try:
-        for person in cfg["Astreinte"]:
-            oncallnumbers.append(cfg["Annuaire"][person])
+        for person in yaml_cfg["Astreinte"]:
+            oncallnumbers.append(yaml_cfg["Annuaire"][person])
     except KeyError:
         syslog.syslog(syslog.LOG_ERR,
                       "Config is wrong for the person(s) or their number(s)")
 
-    return oncallnumbers
+    return oncallnumbers, cfg
 
 
 if __name__ == "__main__":
-    # in case there's number1 and number2
+    # in case there are multiple numbers
     oncallnumbers = []
     # file may be chmod 000 because of the hack muteSMS_5m.sh
     try:
-        oncallnumbers = readconf()
-        # what we got in stdin contains newlines
+        oncallnumbers, cfg = readconf(CONFIG_FILE)
+        # what we got in stdin contains \n but we want it to be a single string
         alertlines = []
         for line in sys.stdin:
             alertlines.append(line)
         alerttosend = ''.join(alertlines)
         # now we have everything so process the alert
         for oncallnumber in oncallnumbers:
-            decide_alerting(oncallnumber, alerttosend[0:156])
+            notifier = decide_alerting(oncallnumber, cfg)
+            alert(oncallnumber, alerttosend[0:156], notifier, cfg)
     # if we can't read the phone number file, alerts must have been disabled
     except IOError:
         syslog.syslog(syslog.LOG_ERR, "Config file couldn't be opened")

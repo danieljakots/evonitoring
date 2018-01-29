@@ -31,7 +31,7 @@ class TestEvonitoring(unittest.TestCase):
         self.assertEqual(''.join(oncallnumbers[0]), "33612345678")
 
     def test_decide_alerting(self):
-        oncallnumbers, _ = evonitoring.readconf(config_file)
+        oncallnumbers, cfg = evonitoring.readconf(config_file)
         self.assertEqual(evonitoring.decide_alerting("33612345678", cfg),
                          "smsmode")
         self.assertEqual(evonitoring.decide_alerting("14381234567", cfg),

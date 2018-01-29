@@ -27,8 +27,7 @@ def notify_twilio(oncallnumber, alert):
                'To': "+" + oncallnumber,
                'Body': alert}
     # send the text with twilio's api
-    p = requests.post(api_cfg["twilio_api_url"] +
-                      api_cfg["twilio_account_sid"] + "/Messages",
+    p = requests.post(api_cfg["twilio_api_url"],
                       data=payload,
                       auth=(api_cfg["twilio_account_sid"],
                             api_cfg["twilio_auth_token"]))
